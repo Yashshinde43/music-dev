@@ -22,7 +22,11 @@ export function UserVoting() {
   });
 
   // WebSocket connection for real-time updates
-  useWebSocket(`ws://localhost:5000/ws?adminId=${(jukeboxData as any)?.admin?.id}&userId=${userId}`, {
+  // WebSocket connection - use dynamic host  
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${protocol}//${window.location.host}/ws?adminId=${(jukeboxData as any)?.admin?.id}&userId=${userId}`;
+  
+  useWebSocket(wsUrl, {
     enabled: !!(jukeboxData as any)?.admin?.id,
     onMessage: (data) => {
       if (data.type === 'vote_update') {

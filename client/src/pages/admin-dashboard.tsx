@@ -25,7 +25,8 @@ import {
   QrCode,
   Download,
   Share,
-  TrendingUp
+  TrendingUp,
+  LogOut
 } from "lucide-react";
 
 export function AdminDashboard() {
@@ -36,8 +37,11 @@ export function AdminDashboard() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
 
-  // WebSocket connection
-  useWebSocket(`ws://localhost:5000/ws?adminId=${adminId}`, {
+  // WebSocket connection - use dynamic host
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${protocol}//${window.location.host}/ws?adminId=${adminId}`;
+  
+  useWebSocket(wsUrl, {
     onMessage: (data) => {
       if (data.type === 'vote_update') {
         // Invalidate songs query to refresh vote counts
@@ -191,6 +195,16 @@ export function AdminDashboard() {
                 >
                   <QrCode className="w-4 h-4 mr-2" />
                   Share QR Code
+                </Button>
+
+                <Button 
+                  variant="outline"
+                  className="border-slate-600 hover:bg-slate-700 text-slate-300"
+                  onClick={() => window.location.href = '/api/logout'}
+                  data-testid="button-logout"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
                 </Button>
               </div>
             </div>

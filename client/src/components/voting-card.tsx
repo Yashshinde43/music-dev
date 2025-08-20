@@ -22,25 +22,32 @@ export function VotingCard({ song, userId, rank }: VotingCardProps) {
 
   const voteMutation = useMutation({
     mutationFn: async () => {
-      // This will be handled via WebSocket
-      const ws = new WebSocket(`ws://localhost:5000/ws?userId=${userId}`);
-      ws.onopen = () => {
-        ws.send(JSON.stringify({
-          type: 'vote',
-          songId: song.id,
-        }));
-        ws.close();
-      };
+      // Use HTTP POST for reliable voting
+      const response = await fetch(`/api/songs/${song.id}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to vote');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       setHasVoted(true);
       toast({ title: `Voted for ${song.title}!` });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         variant: "destructive",
         title: "Failed to vote",
-        description: "Please try again",
+        description: error.message === "You have already voted for this song" ? 
+          "You've already voted for this song" : "Please try again",
       });
     },
   });
