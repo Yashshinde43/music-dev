@@ -33,8 +33,15 @@ export interface IStorage {
 
   // Vote methods
   addVote(vote: InsertVote): Promise<Vote>;
+  createVote(vote: InsertVote): Promise<Vote>;
   hasUserVoted(songId: string, userId: string): Promise<boolean>;
+  getUserVoteForSong(userId: string, songId: string): Promise<Vote | undefined>;
   getSongVotes(songId: string): Promise<number>;
+  getSongVoteCount(songId: string): Promise<number>;
+  
+  // Additional methods
+  getSong(songId: string): Promise<Song | undefined>;
+  getPlaylistById(playlistId: string): Promise<Playlist | undefined>;
 
   // Session methods
   createSession(session: InsertSession): Promise<Session>;
@@ -199,6 +206,33 @@ export class DatabaseStorage implements IStorage {
       .from(votes)
       .where(eq(votes.songId, songId));
     return Number(result.count);
+  }
+
+  // Alias methods for compatibility
+  async createVote(vote: InsertVote): Promise<Vote> {
+    return this.addVote(vote);
+  }
+
+  async getUserVoteForSong(userId: string, songId: string): Promise<Vote | undefined> {
+    const [vote] = await db
+      .select()
+      .from(votes)
+      .where(and(eq(votes.userId, userId), eq(votes.songId, songId)));
+    return vote || undefined;
+  }
+
+  async getSongVoteCount(songId: string): Promise<number> {
+    return this.getSongVotes(songId);
+  }
+
+  async getSong(songId: string): Promise<Song | undefined> {
+    const [song] = await db.select().from(songs).where(eq(songs.id, songId));
+    return song || undefined;
+  }
+
+  async getPlaylistById(playlistId: string): Promise<Playlist | undefined> {
+    const [playlist] = await db.select().from(playlists).where(eq(playlists.id, playlistId));
+    return playlist || undefined;
   }
 
   async createSession(session: InsertSession): Promise<Session> {

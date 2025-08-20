@@ -371,5 +371,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public voting route
+  app.post('/api/songs/:songId/vote', async (req, res) => {
+    try {
+      const { songId } = req.params;
+      const voteData = insertVoteSchema.parse({ ...req.body, songId });
+      
+      // Check if user already voted for this song
+      const existingVote = await storage.getUserVoteForSong(voteData.userId, songId);
+      if (existingVote) {
+        return res.status(409).json({ error: 'You have already voted for this song' });
+      }
+
+      const vote = await storage.createVote(voteData);
+      
+      // Get song info for WebSocket broadcast
+      const song = await storage.getSong(songId);
+      if (song) {
+        const playlist = await storage.getPlaylistById(song.playlistId);
+        if (playlist) {
+          // Broadcast vote update to admin via WebSocket
+          const voteCount = await storage.getSongVoteCount(songId);
+          wss.clients.forEach((client) => {
+            const wsClient = client as WebSocketClient;
+            if (wsClient.adminId === playlist.adminId && client.readyState === 1) {
+              client.send(JSON.stringify({
+                type: 'vote_update',
+                songId,
+                voteCount
+              }));
+            }
+          });
+        }
+      }
+
+      res.json({ success: true, vote });
+    } catch (error) {
+      console.error('Vote error:', error);
+      res.status(400).json({ error: 'Invalid vote data' });
+    }
+  });
+
   return httpServer;
 }

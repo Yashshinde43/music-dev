@@ -33,6 +33,8 @@ export function AdminDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showSongSearch, setShowSongSearch] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
 
   // WebSocket connection
   useWebSocket(`ws://localhost:5000/ws?adminId=${adminId}`, {
@@ -90,6 +92,18 @@ export function AdminDashboard() {
 
   const handlePlayNow = (songId: string) => {
     playMutation.mutate(songId);
+  };
+
+  const toggleAudioPlayback = () => {
+    if (!audioRef || !currentlyPlaying?.previewUrl) return;
+    
+    if (isPlaying) {
+      audioRef.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.play();
+      setIsPlaying(true);
+    }
   };
 
   const downloadQR = () => {
@@ -273,60 +287,84 @@ export function AdminDashboard() {
                   </CardHeader>
                   <CardContent className="p-6">
                     {currentlyPlaying ? (
-                      <div className="flex items-center space-x-4">
-                        <div className="w-20 h-20 gradient-primary rounded-xl flex items-center justify-center flex-shrink-0">
-                          {currentlyPlaying.artworkUrl ? (
-                            <img 
-                              src={currentlyPlaying.artworkUrl} 
-                              alt="Album art"
-                              className="w-full h-full rounded-xl object-cover"
-                            />
-                          ) : (
-                            <Music className="w-8 h-8 text-white" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-lg font-semibold text-white truncate" data-testid="current-song-title">
-                            {currentlyPlaying.title}
-                          </h4>
-                          <p className="text-slate-400 truncate" data-testid="current-song-artist">
-                            {currentlyPlaying.artist}
-                          </p>
-                          {currentlyPlaying.album && (
-                            <p className="text-sm text-slate-500 truncate">{currentlyPlaying.album}</p>
-                          )}
-                          <div className="flex items-center mt-2 space-x-2">
-                            <div className="flex items-center text-sm text-accent">
-                              <ThumbsUp className="w-3 h-3 mr-1" />
-                              <span data-testid="current-song-votes">{currentlyPlaying.voteCount} votes</span>
-                            </div>
-                            {currentlyPlaying.duration && (
-                              <>
-                                <span className="text-slate-600">•</span>
-                                <span className="text-sm text-slate-400">
-                                  {Math.floor(currentlyPlaying.duration / 60)}:{(currentlyPlaying.duration % 60).toString().padStart(2, '0')}
-                                </span>
-                              </>
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-20 h-20 gradient-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                            {currentlyPlaying.artworkUrl ? (
+                              <img 
+                                src={currentlyPlaying.artworkUrl} 
+                                alt="Album art"
+                                className="w-full h-full rounded-xl object-cover"
+                              />
+                            ) : (
+                              <Music className="w-8 h-8 text-white" />
                             )}
                           </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-lg font-semibold text-white truncate" data-testid="current-song-title">
+                              {currentlyPlaying.title}
+                            </h4>
+                            <p className="text-slate-400 truncate" data-testid="current-song-artist">
+                              {currentlyPlaying.artist}
+                            </p>
+                            {currentlyPlaying.album && (
+                              <p className="text-sm text-slate-500 truncate">{currentlyPlaying.album}</p>
+                            )}
+                            <div className="flex items-center mt-2 space-x-2">
+                              <div className="flex items-center text-sm text-accent">
+                                <ThumbsUp className="w-3 h-3 mr-1" />
+                                <span data-testid="current-song-votes">{currentlyPlaying.voteCount} votes</span>
+                              </div>
+                              {currentlyPlaying.duration && (
+                                <>
+                                  <span className="text-slate-600">•</span>
+                                  <span className="text-sm text-slate-400">
+                                    {Math.floor(currentlyPlaying.duration / 60)}:{(currentlyPlaying.duration % 60).toString().padStart(2, '0')}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-center space-y-2">
+                            <Button
+                              onClick={toggleAudioPlayback}
+                              size="sm"
+                              className="w-12 h-12 gradient-primary rounded-full hover:opacity-90"
+                              disabled={!currentlyPlaying.previewUrl}
+                              data-testid="button-pause-play"
+                            >
+                              {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-10 h-10 rounded-full border-slate-600"
+                              data-testid="button-skip"
+                            >
+                              <SkipForward className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex flex-col items-center space-y-2">
-                          <Button
-                            size="sm"
-                            className="w-12 h-12 gradient-primary rounded-full hover:opacity-90"
-                            data-testid="button-pause-play"
-                          >
-                            <Pause className="w-5 h-5" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-10 h-10 rounded-full border-slate-600"
-                            data-testid="button-skip"
-                          >
-                            <SkipForward className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        {currentlyPlaying.previewUrl && (
+                          <div className="bg-slate-700 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs text-slate-300">30s iTunes Preview</span>
+                              <Badge variant="secondary" className="text-xs">
+                                Live Audio
+                              </Badge>
+                            </div>
+                            <audio
+                              ref={setAudioRef}
+                              src={currentlyPlaying.previewUrl}
+                              onPlay={() => setIsPlaying(true)}
+                              onPause={() => setIsPlaying(false)}
+                              onEnded={() => setIsPlaying(false)}
+                              className="w-full"
+                              controls
+                              data-testid="audio-player"
+                            />
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="text-center py-8 text-slate-400">
