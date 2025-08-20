@@ -392,16 +392,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (playlist) {
           // Broadcast vote update to admin via WebSocket
           const voteCount = await storage.getSongVoteCount(songId);
-          wss.clients.forEach((client) => {
-            const wsClient = client as WebSocketClient;
-            if (wsClient.adminId === playlist.adminId && client.readyState === 1) {
-              client.send(JSON.stringify({
-                type: 'vote_update',
-                songId,
-                voteCount
-              }));
-            }
+          broadcastToRoom(playlist.adminId, {
+            type: 'vote_update',
+            songId,
+            voteCount
           });
+
+          // Auto-play: Check if this song now has the highest votes
+          const topVotedSong = await storage.getTopVotedSong(playlist.id);
+          if (topVotedSong && topVotedSong.id === songId) {
+            // Set this song as currently playing
+            await storage.setCurrentlyPlaying(playlist.id, songId);
+            
+            // Broadcast now playing update
+            broadcastToRoom(playlist.adminId, {
+              type: 'now_playing',
+              song: topVotedSong
+            });
+          }
         }
       }
 

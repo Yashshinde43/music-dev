@@ -28,7 +28,7 @@ export interface IStorage {
   // Song methods
   getPlaylistSongs(playlistId: string): Promise<(Song & { voteCount: number })[]>;
   addSong(song: InsertSong): Promise<Song>;
-  setCurrentlyPlaying(songId: string): Promise<void>;
+  setCurrentlyPlaying(playlistId: string, songId: string): Promise<void>;
   getCurrentlyPlaying(playlistId: string): Promise<Song | undefined>;
 
   // Vote methods
@@ -42,6 +42,7 @@ export interface IStorage {
   // Additional methods
   getSong(songId: string): Promise<Song | undefined>;
   getPlaylistById(playlistId: string): Promise<Playlist | undefined>;
+  getTopVotedSong(playlistId: string): Promise<any>;
 
   // Session methods
   createSession(session: InsertSession): Promise<Session>;
@@ -158,22 +159,6 @@ export class DatabaseStorage implements IStorage {
     return newSong;
   }
 
-  async setCurrentlyPlaying(songId: string): Promise<void> {
-    // First, set all songs in the playlist to not playing
-    const song = await db.select().from(songs).where(eq(songs.id, songId)).limit(1);
-    if (song.length > 0) {
-      await db
-        .update(songs)
-        .set({ isPlaying: false })
-        .where(eq(songs.playlistId, song[0].playlistId));
-      
-      // Then set the specific song to playing
-      await db
-        .update(songs)
-        .set({ isPlaying: true })
-        .where(eq(songs.id, songId));
-    }
-  }
 
   async getCurrentlyPlaying(playlistId: string): Promise<Song | undefined> {
     const [song] = await db
@@ -301,6 +286,41 @@ export class DatabaseStorage implements IStorage {
       totalVotes: Number(voteCount.count),
       playlistLength: playlistSongs.length,
     };
+  }
+
+  async getTopVotedSong(playlistId: string): Promise<any> {
+    const songsWithVotes = await db
+      .select({
+        id: songs.id,
+        title: songs.title,
+        artist: songs.artist,
+        album: songs.album,
+        artworkUrl: songs.artworkUrl,
+        previewUrl: songs.previewUrl,
+        duration: songs.duration,
+        voteCount: count(votes.id)
+      })
+      .from(songs)
+      .leftJoin(votes, eq(songs.id, votes.songId))
+      .where(eq(songs.playlistId, playlistId))
+      .groupBy(songs.id)
+      .orderBy(desc(count(votes.id)));
+
+    return songsWithVotes[0] || null;
+  }
+
+  async setCurrentlyPlaying(playlistId: string, songId: string): Promise<void> {
+    // First, unset any currently playing songs in this playlist
+    await db
+      .update(songs)
+      .set({ isPlaying: false })
+      .where(eq(songs.playlistId, playlistId));
+    
+    // Then set the new currently playing song
+    await db
+      .update(songs)
+      .set({ isPlaying: true })
+      .where(eq(songs.id, songId));
   }
 }
 
