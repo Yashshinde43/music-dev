@@ -130,13 +130,20 @@ export type InsertVote = z.infer<typeof insertVoteSchema>;
 export type Session = typeof sessions.$inferSelect;
 export type InsertSession = z.infer<typeof insertSessionSchema>;
 
-// Login schema
+// Login schemas
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
+export const registerSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  displayName: z.string().min(1, "Display name is required"),
+});
+
 export type LoginData = z.infer<typeof loginSchema>;
+export type RegisterData = z.infer<typeof registerSchema>;
 
 // Song search schema
 export const songSearchSchema = z.object({

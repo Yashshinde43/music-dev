@@ -1,9 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { 
   loginSchema, 
+  registerSchema,
   songSearchSchema,
   insertPlaylistSchema,
   insertSongSchema,
@@ -19,6 +22,24 @@ interface WebSocketClient extends WebSocket {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
+
+  // Session configuration
+  const PgSession = connectPg(session);
+  app.use(session({
+    store: new PgSession({
+      conString: process.env.DATABASE_URL,
+      tableName: 'session_store',
+      createTableIfMissing: true,
+    }),
+    secret: process.env.SESSION_SECRET || 'fallback-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  }));
 
   // WebSocket server for real-time updates
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
@@ -100,9 +121,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { username, password } = loginSchema.parse(req.body);
       const admin = await storage.getAdminByUsername(username);
       
-      if (!admin || admin.password !== password) {
+      if (!admin) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
+
+      const isPasswordValid = await storage.validatePassword(password, admin.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      // Store admin in session
+      (req.session as any).adminId = admin.id;
 
       res.json({ 
         admin: { 
@@ -119,9 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/register', async (req, res) => {
     try {
-      const adminData = loginSchema.extend({
-        displayName: loginSchema.shape.username
-      }).parse(req.body);
+      const adminData = registerSchema.parse(req.body);
 
       const existingAdmin = await storage.getAdminByUsername(adminData.username);
       if (existingAdmin) {
@@ -130,6 +157,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const admin = await storage.createAdmin(adminData);
       
+      // Create default playlist for new admin
+      await storage.createPlaylist({
+        adminId: admin.id,
+        name: "My Jukebox Playlist",
+        isActive: true,
+      });
+      
+      // Store admin in session
+      (req.session as any).adminId = admin.id;
+
       res.json({ 
         admin: { 
           id: admin.id, 
@@ -143,8 +180,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/admin/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to logout' });
+      }
+      res.json({ success: true });
+    });
+  });
+
+  // Authentication middleware
+  const requireAuth = (req: any, res: any, next: any) => {
+    if (!req.session.adminId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    next();
+  };
+
   // Admin dashboard routes
-  app.get('/api/admin/:adminId/stats', async (req, res) => {
+  app.get('/api/admin/:adminId/stats', requireAuth, async (req, res) => {
     try {
       const { adminId } = req.params;
       const stats = await storage.getAdminStats(adminId);
@@ -154,7 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/:adminId/playlists', async (req, res) => {
+  app.get('/api/admin/:adminId/playlists', requireAuth, async (req, res) => {
     try {
       const { adminId } = req.params;
       const playlists = await storage.getAdminPlaylists(adminId);
@@ -164,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/:adminId/playlists', async (req, res) => {
+  app.post('/api/admin/:adminId/playlists', requireAuth, async (req, res) => {
     try {
       const { adminId } = req.params;
       const playlistData = insertPlaylistSchema.parse({ ...req.body, adminId });
@@ -175,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/:adminId/playlists/:playlistId/activate', async (req, res) => {
+  app.put('/api/admin/:adminId/playlists/:playlistId/activate', requireAuth, async (req, res) => {
     try {
       const { adminId, playlistId } = req.params;
       await storage.setActivePlaylist(adminId, playlistId);
@@ -236,7 +290,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // iTunes Search API integration
   app.get('/api/search/songs', async (req, res) => {
     try {
-      const { query, limit = 20 } = songSearchSchema.parse(req.query);
+      const queryParams = {
+        query: req.query.query as string,
+        limit: req.query.limit ? parseInt(req.query.limit as string, 10) : 20
+      };
+      const { query, limit } = songSearchSchema.parse(queryParams);
       
       const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=${limit}`;
       const response = await fetch(itunesUrl);
@@ -291,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // QR Code generation
-  app.get('/api/admin/:adminId/qrcode', async (req, res) => {
+  app.get('/api/admin/:adminId/qrcode', requireAuth, async (req, res) => {
     try {
       const { adminId } = req.params;
       const admin = await storage.getAdmin(adminId);

@@ -57,14 +57,14 @@ export function AdminDashboard() {
   });
 
   // Fetch playlists
-  const { data: playlists } = useQuery({
+  const { data: playlists = [] } = useQuery({
     queryKey: ['/api/admin', adminId, 'playlists'],
   });
 
-  const activePlaylist = playlists?.find((p: any) => p.isActive);
+  const activePlaylist = (playlists as any[]).find((p: any) => p.isActive);
 
   // Fetch songs for active playlist
-  const { data: songs, isLoading: songsLoading } = useQuery({
+  const { data: songs = [], isLoading: songsLoading } = useQuery({
     queryKey: ['/api/playlists', activePlaylist?.id, 'songs'],
     enabled: !!activePlaylist?.id,
   });
@@ -72,10 +72,11 @@ export function AdminDashboard() {
   // Fetch QR code
   const { data: qrData } = useQuery({
     queryKey: ['/api/admin', adminId, 'qrcode'],
+    enabled: !!adminId,
   });
 
-  const currentlyPlaying = songs?.find((song: any) => song.isPlaying);
-  const topVotedSongs = songs?.slice(0, 3) || [];
+  const currentlyPlaying = (songs as any[]).find((song: any) => song.isPlaying);
+  const topVotedSongs = (songs as any[]).slice(0, 3);
 
   const playMutation = useMutation({
     mutationFn: async (songId: string) => {
@@ -92,25 +93,25 @@ export function AdminDashboard() {
   };
 
   const downloadQR = () => {
-    if (qrData?.qrCode) {
+    if ((qrData as any)?.qrCode) {
       const link = document.createElement('a');
       link.download = 'jukebox-qr-code.png';
-      link.href = qrData.qrCode;
+      link.href = (qrData as any).qrCode;
       link.click();
     }
   };
 
   const shareQR = async () => {
-    if (qrData?.url) {
+    if ((qrData as any)?.url) {
       try {
         await navigator.share({
           title: 'Join my Jukebox!',
           text: 'Scan this QR code or visit the link to vote for songs',
-          url: qrData.url,
+          url: (qrData as any).url,
         });
       } catch (error) {
         // Fallback to clipboard
-        navigator.clipboard.writeText(qrData.url);
+        navigator.clipboard.writeText((qrData as any).url);
         toast({ title: "Link copied to clipboard!" });
       }
     }
@@ -191,7 +192,7 @@ export function AdminDashboard() {
                     <div>
                       <p className="text-slate-400 text-sm font-medium">Active Users</p>
                       <p className="text-2xl font-bold text-white mt-1" data-testid="stat-active-users">
-                        {stats?.activeUsers || 0}
+                        {(stats as any)?.activeUsers || 0}
                       </p>
                     </div>
                     <div className="w-12 h-12 gradient-accent rounded-xl flex items-center justify-center">
@@ -211,7 +212,7 @@ export function AdminDashboard() {
                     <div>
                       <p className="text-slate-400 text-sm font-medium">Total Votes</p>
                       <p className="text-2xl font-bold text-white mt-1" data-testid="stat-total-votes">
-                        {stats?.totalVotes || 0}
+                        {(stats as any)?.totalVotes || 0}
                       </p>
                     </div>
                     <div className="w-12 h-12 bg-gradient-to-br from-accent to-cyan-400 rounded-xl flex items-center justify-center">
@@ -231,7 +232,7 @@ export function AdminDashboard() {
                     <div>
                       <p className="text-slate-400 text-sm font-medium">Playlist Songs</p>
                       <p className="text-2xl font-bold text-white mt-1" data-testid="stat-playlist-length">
-                        {stats?.playlistLength || 0}
+                        {(stats as any)?.playlistLength || 0}
                       </p>
                     </div>
                     <div className="w-12 h-12 bg-gradient-to-br from-secondary to-purple-400 rounded-xl flex items-center justify-center">
@@ -422,7 +423,7 @@ export function AdminDashboard() {
                   </CardHeader>
                   <CardContent className="p-6 text-center">
                     <QRCodeDisplay 
-                      value={qrData?.url} 
+                      value={(qrData as any)?.url} 
                       size={192}
                       className="mx-auto mb-4"
                       data-testid="qr-code-display"
@@ -434,7 +435,7 @@ export function AdminDashboard() {
                         <Button 
                           onClick={downloadQR}
                           className="flex-1 gradient-primary hover:opacity-90"
-                          disabled={!qrData?.qrCode}
+                          disabled={!(qrData as any)?.qrCode}
                           data-testid="button-download-qr"
                         >
                           <Download className="w-4 h-4 mr-2" />
@@ -444,7 +445,7 @@ export function AdminDashboard() {
                           onClick={shareQR}
                           variant="outline"
                           className="flex-1 border-slate-600"
-                          disabled={!qrData?.url}
+                          disabled={!(qrData as any)?.url}
                           data-testid="button-share-qr-copy"
                         >
                           <Share className="w-4 h-4 mr-2" />
@@ -453,11 +454,11 @@ export function AdminDashboard() {
                       </div>
                     </div>
 
-                    {qrData?.url && (
+                    {(qrData as any)?.url && (
                       <div className="mt-4 p-3 bg-slate-700 rounded-lg">
                         <p className="text-xs text-slate-400 mb-1">Direct Link</p>
                         <p className="text-sm text-white font-mono break-all" data-testid="qr-url">
-                          {qrData.url}
+                          {(qrData as any).url}
                         </p>
                       </div>
                     )}

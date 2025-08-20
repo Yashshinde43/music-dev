@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { loginSchema, type LoginData } from "@shared/schema";
+import { loginSchema, registerSchema, type LoginData, type RegisterData } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,10 +18,8 @@ export function AdminLogin() {
   const { toast } = useToast();
   const [isRegister, setIsRegister] = useState(false);
 
-  const form = useForm<LoginData>({
-    resolver: zodResolver(loginSchema.extend({
-      displayName: isRegister ? loginSchema.shape.username : loginSchema.shape.username.optional(),
-    })),
+  const form = useForm<LoginData & { displayName?: string }>({
+    resolver: zodResolver(isRegister ? registerSchema : loginSchema),
     defaultValues: {
       username: "",
       password: "",

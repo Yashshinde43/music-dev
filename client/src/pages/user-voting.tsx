@@ -22,8 +22,8 @@ export function UserVoting() {
   });
 
   // WebSocket connection for real-time updates
-  useWebSocket(`ws://localhost:5000/ws?adminId=${jukeboxData?.admin?.id}&userId=${userId}`, {
-    enabled: !!jukeboxData?.admin?.id,
+  useWebSocket(`ws://localhost:5000/ws?adminId=${(jukeboxData as any)?.admin?.id}&userId=${userId}`, {
+    enabled: !!(jukeboxData as any)?.admin?.id,
     onMessage: (data) => {
       if (data.type === 'vote_update') {
         queryClient.invalidateQueries({ queryKey: ['/api/public', uniqueCode, 'info'] });
@@ -39,20 +39,20 @@ export function UserVoting() {
     }
   });
 
-  const currentlyPlaying = jukeboxData?.currentlyPlaying;
-  const songs = jukeboxData?.songs?.filter((song: any) => !song.isPlaying) || [];
-  const adminName = jukeboxData?.admin?.displayName;
+  const currentlyPlaying = (jukeboxData as any)?.currentlyPlaying;
+  const songs = (jukeboxData as any)?.songs?.filter((song: any) => !song.isPlaying) || [];
+  const adminName = (jukeboxData as any)?.admin?.displayName;
 
   // Send heartbeat every 30 seconds to maintain session
   useEffect(() => {
-    if (!jukeboxData?.admin?.id) return;
+    if (!(jukeboxData as any)?.admin?.id) return;
 
     const interval = setInterval(() => {
       // This would be sent via WebSocket heartbeat
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [jukeboxData?.admin?.id]);
+  }, [(jukeboxData as any)?.admin?.id]);
 
   if (isLoading) {
     return (

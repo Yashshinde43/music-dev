@@ -9,6 +9,7 @@ import {
 import { db } from "./db";
 import { eq, desc, and, sql, count } from "drizzle-orm";
 import { randomBytes } from "crypto";
+import bcrypt from "bcrypt";
 
 export interface IStorage {
   // Admin methods
@@ -16,6 +17,7 @@ export interface IStorage {
   getAdminByUsername(username: string): Promise<Admin | undefined>;
   getAdminByUniqueCode(code: string): Promise<Admin | undefined>;
   createAdmin(admin: InsertAdmin): Promise<Admin>;
+  validatePassword(password: string, hashedPassword: string): Promise<boolean>;
 
   // Playlist methods
   getAdminPlaylists(adminId: string): Promise<Playlist[]>;
@@ -65,11 +67,20 @@ export class DatabaseStorage implements IStorage {
 
   async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
     const uniqueCode = randomBytes(6).toString('hex');
+    const hashedPassword = await bcrypt.hash(insertAdmin.password, 10);
     const [admin] = await db
       .insert(admins)
-      .values({ ...insertAdmin, uniqueCode })
+      .values({ 
+        ...insertAdmin, 
+        password: hashedPassword,
+        uniqueCode 
+      })
       .returning();
     return admin;
+  }
+
+  async validatePassword(password: string, hashedPassword: string): Promise<boolean> {
+    return bcrypt.compare(password, hashedPassword);
   }
 
   async getAdminPlaylists(adminId: string): Promise<Playlist[]> {

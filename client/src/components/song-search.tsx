@@ -19,8 +19,18 @@ export function SongSearch({ playlistId, onSongAdded }: SongSearchProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: searchResults, isLoading: searchLoading } = useQuery({
-    queryKey: ['/api/search/songs', { query: debouncedQuery, limit: 20 }],
+  const { data: searchResults = [], isLoading: searchLoading } = useQuery({
+    queryKey: ['/api/search/songs', debouncedQuery, 20],
+    queryFn: async () => {
+      if (debouncedQuery.length <= 2) return [];
+      const params = new URLSearchParams({
+        query: debouncedQuery,
+        limit: '20'
+      });
+      const response = await fetch(`/api/search/songs?${params}`);
+      if (!response.ok) throw new Error('Search failed');
+      return response.json();
+    },
     enabled: debouncedQuery.length > 2,
   });
 
@@ -71,7 +81,7 @@ export function SongSearch({ playlistId, onSongAdded }: SongSearchProps) {
           </div>
         )}
 
-        {!searchLoading && debouncedQuery && searchResults?.length === 0 && (
+        {!searchLoading && debouncedQuery && searchResults.length === 0 && (
           <div className="flex flex-col items-center justify-center py-8 text-slate-400" data-testid="no-results">
             <Music className="w-12 h-12 mb-4 opacity-50" />
             <p>No songs found for "{debouncedQuery}"</p>
@@ -87,7 +97,7 @@ export function SongSearch({ playlistId, onSongAdded }: SongSearchProps) {
         )}
 
         <div className="space-y-3" data-testid="search-results">
-          {searchResults?.map((song: any, index: number) => (
+          {searchResults.map((song: any, index: number) => (
             <div 
               key={`${song.itunesId}-${index}`} 
               className="flex items-center space-x-4 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors"
