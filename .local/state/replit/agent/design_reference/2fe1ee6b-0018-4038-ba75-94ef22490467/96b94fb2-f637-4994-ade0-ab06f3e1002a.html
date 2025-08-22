@@ -1,0 +1,651 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Jukebox - Collaborative Music Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#EEF2FF',
+                            100: '#E0E7FF',
+                            500: '#6366F1',
+                            600: '#5856EB',
+                            700: '#4F46E5',
+                            800: '#4338CA',
+                            900: '#3730A3'
+                        },
+                        accent: {
+                            500: '#3B82F6',
+                            600: '#2563EB'
+                        }
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .vote-pulse {
+            animation: pulse-vote 0.6s ease-out;
+        }
+        @keyframes pulse-vote {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .gradient-border {
+            background: linear-gradient(135deg, #6366F1, #8B5CF6);
+            padding: 2px;
+            border-radius: 12px;
+        }
+        .qr-container {
+            background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+
+<!-- @COMPONENT: MainNavigation -->
+<nav class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-primary-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-music text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">QR Jukebox</h1>
+                    <p class="text-xs text-slate-400">Collaborative Music Platform</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="text-slate-300 hover:text-white transition-colors">
+                    <i class="fas fa-bell text-lg"></i>
+                </button>
+                <div class="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
+                    <span class="text-sm font-medium" data-bind="user.initials">AD</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+<!-- @END_COMPONENT: MainNavigation -->
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- @COMPONENT: AdminDashboardHeader -->
+    <div class="mb-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+                <h2 class="text-3xl font-bold text-white mb-2">Admin Dashboard</h2>
+                <p class="text-slate-400">Manage your collaborative jukebox and track real-time votes</p>
+                <div class="mt-3 flex items-center space-x-4 text-sm">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-slate-300">Live Session Active</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-users text-slate-400"></i>
+                        <span class="text-slate-300" data-bind="session.activeUsers">12 Active Voters</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- QR Code Section -->
+            <div class="qr-container rounded-2xl p-6 text-center min-w-[280px]">
+                <h3 class="text-lg font-semibold mb-4">Your QR Code</h3>
+                <!-- QR Code placeholder - would be generated dynamically -->
+                <div class="bg-white p-4 rounded-xl mx-auto w-48 h-48 flex items-center justify-center mb-4">
+                    <div class="text-slate-800 text-center">
+                        <i class="fas fa-qrcode text-6xl mb-2"></i>
+                        <p class="text-sm font-medium" data-bind="admin.qrId">ID: #QRJ2024</p>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-300 mb-4">Share this QR code for users to join your jukebox</p>
+                <div class="flex space-x-2">
+                    <button class="flex-1 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-event="click:downloadQR">
+                        <i class="fas fa-download mr-2"></i>Download
+                    </button>
+                    <button class="flex-1 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-event="click:shareQR">
+                        <i class="fas fa-share mr-2"></i>Share
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: AdminDashboardHeader -->
+
+    <!-- @COMPONENT: CurrentlyPlaying -->
+    <div class="mb-8">
+        <div class="bg-gradient-to-r from-primary-600/20 to-purple-600/20 border border-primary-500/30 rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold">Now Playing</h3>
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-slate-300">Auto-playing top voted</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <!-- Album Art placeholder -->
+                <!-- Modern electronic music album cover with vibrant colors -->
+                <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=400" alt="Album cover" class="w-20 h-20 rounded-xl shadow-lg" />
+                
+                <div class="flex-1">
+                    <h4 class="text-lg font-semibold text-white" data-bind="currentSong.title">Blinding Lights</h4>
+                    <p class="text-slate-300" data-bind="currentSong.artist">The Weeknd</p>
+                    <div class="mt-2 flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-heart text-red-400"></i>
+                            <span class="text-sm text-slate-300" data-bind="currentSong.votes">24 votes</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-clock text-slate-400"></i>
+                            <span class="text-sm text-slate-300">3:21</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Audio Controls -->
+                <div class="flex items-center space-x-4">
+                    <button class="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center transition-colors" data-event="click:previousTrack">
+                        <i class="fas fa-step-backward text-sm"></i>
+                    </button>
+                    <button class="w-12 h-12 bg-primary-600 hover:bg-primary-700 rounded-full flex items-center justify-center transition-colors" data-event="click:togglePlayPause">
+                        <i class="fas fa-pause text-lg ml-1"></i>
+                    </button>
+                    <button class="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center transition-colors" data-event="click:nextTrack">
+                        <i class="fas fa-step-forward text-sm"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="mt-6">
+                <div class="flex justify-between text-sm text-slate-400 mb-2">
+                    <span data-bind="currentSong.currentTime">1:23</span>
+                    <span data-bind="currentSong.duration">3:21</span>
+                </div>
+                <div class="w-full bg-slate-700 rounded-full h-2">
+                    <div class="bg-gradient-to-r from-primary-500 to-purple-500 h-2 rounded-full" style="width: 40%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: CurrentlyPlaying -->
+
+    <div class="grid lg:grid-cols-3 gap-8">
+        
+        <!-- @COMPONENT: PlaylistManagement -->
+        <div class="lg:col-span-2">
+            <div class="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold">Playlist Management</h3>
+                    <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2" data-event="click:addSong">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Song</span>
+                    </button>
+                </div>
+                
+                <!-- Song List -->
+                <!-- @STATE: songs:Array = [] -->
+                <!-- @MAP: songs.map((song, index) => ( -->
+                <div class="space-y-4">
+                    <div class="bg-slate-700/50 border border-slate-600 rounded-xl p-4 hover:bg-slate-700/70 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <!-- Modern pop music album cover with bright colors -->
+                                <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=200&h=200" alt="Song artwork" class="w-12 h-12 rounded-lg" data-mock="true" />
+                                <div>
+                                    <h4 class="font-medium text-white" data-bind="song.title">Blinding Lights</h4>
+                                    <p class="text-sm text-slate-300" data-bind="song.artist">The Weeknd</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex items-center space-x-1">
+                                        <i class="fas fa-heart text-red-400"></i>
+                                        <span class="font-semibold text-red-400" data-bind="song.votes">24</span>
+                                    </div>
+                                    <span class="text-slate-400">votes</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button class="w-8 h-8 bg-slate-600 hover:bg-slate-500 rounded-lg flex items-center justify-center transition-colors" data-event="click:editSong">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button class="w-8 h-8 bg-red-600 hover:bg-red-700 rounded-lg flex items-center justify-center transition-colors" data-event="click:removeSong">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-700/50 border border-slate-600 rounded-xl p-4 hover:bg-slate-700/70 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <!-- Hip-hop album cover with urban aesthetic -->
+                                <img src="https://pixabay.com/get/gee3ae5b8a4931bbbaf387f61977ff941e7102093f9b1dd1a6916f10bd71b48d29aa76cfb804addd51db1e464b2221947fe811f4898d83baf6a28258e1cb54a49_1280.jpg" alt="Song artwork" class="w-12 h-12 rounded-lg" data-mock="true" />
+                                <div>
+                                    <h4 class="font-medium text-white" data-bind="song.title">Good 4 U</h4>
+                                    <p class="text-sm text-slate-300" data-bind="song.artist">Olivia Rodrigo</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex items-center space-x-1">
+                                        <i class="fas fa-heart text-red-400"></i>
+                                        <span class="font-semibold text-red-400" data-bind="song.votes">18</span>
+                                    </div>
+                                    <span class="text-slate-400">votes</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button class="w-8 h-8 bg-slate-600 hover:bg-slate-500 rounded-lg flex items-center justify-center transition-colors" data-event="click:editSong">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button class="w-8 h-8 bg-red-600 hover:bg-red-700 rounded-lg flex items-center justify-center transition-colors" data-event="click:removeSong">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-700/50 border border-slate-600 rounded-xl p-4 hover:bg-slate-700/70 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <!-- Rock album cover with guitar and stage lights -->
+                                <img src="https://pixabay.com/get/g1348be511392a772be60f7a0fd9bd19463c21d9ba5a8f2d66cfa35da8c8ecd9f3f90dd398f10cc0e8e68418f3591f4433b3f50d2f843f21918a73bfbcaa1fe1d_1280.jpg" alt="Song artwork" class="w-12 h-12 rounded-lg" data-mock="true" />
+                                <div>
+                                    <h4 class="font-medium text-white" data-bind="song.title">Levitating</h4>
+                                    <p class="text-sm text-slate-300" data-bind="song.artist">Dua Lipa</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex items-center space-x-1">
+                                        <i class="fas fa-heart text-red-400"></i>
+                                        <span class="font-semibold text-red-400" data-bind="song.votes">15</span>
+                                    </div>
+                                    <span class="text-slate-400">votes</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button class="w-8 h-8 bg-slate-600 hover:bg-slate-500 rounded-lg flex items-center justify-center transition-colors" data-event="click:editSong">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button class="w-8 h-8 bg-red-600 hover:bg-red-700 rounded-lg flex items-center justify-center transition-colors" data-event="click:removeSong">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-700/50 border border-slate-600 rounded-xl p-4 hover:bg-slate-700/70 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <!-- Electronic dance music album cover with neon colors -->
+                                <img src="https://pixabay.com/get/ga74f05a98081fbe97180ff8806e967399a454d0c9ed971b54c6e2ce932fd961ecf0f9ef37979fedde92291ad9773d36c7d727baaca24557dd7530a53d71b5095_1280.jpg" alt="Song artwork" class="w-12 h-12 rounded-lg" data-mock="true" />
+                                <div>
+                                    <h4 class="font-medium text-white" data-bind="song.title">Stay</h4>
+                                    <p class="text-sm text-slate-300" data-bind="song.artist">The Kid LAROI & Justin Bieber</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex items-center space-x-1">
+                                        <i class="fas fa-heart text-red-400"></i>
+                                        <span class="font-semibold text-red-400" data-bind="song.votes">12</span>
+                                    </div>
+                                    <span class="text-slate-400">votes</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button class="w-8 h-8 bg-slate-600 hover:bg-slate-500 rounded-lg flex items-center justify-center transition-colors" data-event="click:editSong">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button class="w-8 h-8 bg-red-600 hover:bg-red-700 rounded-lg flex items-center justify-center transition-colors" data-event="click:removeSong">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_MAP )) -->
+            </div>
+        </div>
+        <!-- @END_COMPONENT: PlaylistManagement -->
+
+        <!-- @COMPONENT: SessionStats -->
+        <div class="space-y-6">
+            <!-- Live Stats -->
+            <div class="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Live Session Stats</h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-users text-green-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400">Active Voters</p>
+                                <p class="text-xl font-bold" data-bind="stats.activeVoters">12</p>
+                            </div>
+                        </div>
+                        <div class="text-green-400 text-sm">
+                            <i class="fas fa-arrow-up mr-1"></i>+3
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-heart text-blue-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400">Total Votes</p>
+                                <p class="text-xl font-bold" data-bind="stats.totalVotes">69</p>
+                            </div>
+                        </div>
+                        <div class="text-blue-400 text-sm">
+                            <i class="fas fa-arrow-up mr-1"></i>+7
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-play text-purple-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400">Songs Played</p>
+                                <p class="text-xl font-bold" data-bind="stats.songsPlayed">8</p>
+                            </div>
+                        </div>
+                        <div class="text-purple-400 text-sm">Today</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Session Controls -->
+            <div class="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Session Controls</h3>
+                <div class="space-y-4">
+                    <button class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2" data-event="click:startSession">
+                        <i class="fas fa-play"></i>
+                        <span>Start Voting Session</span>
+                    </button>
+                    
+                    <button class="w-full bg-slate-600 hover:bg-slate-500 text-white py-3 px-4 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2" data-event="click:pauseSession">
+                        <i class="fas fa-pause"></i>
+                        <span>Pause Session</span>
+                    </button>
+                    
+                    <button class="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2" data-event="click:endSession">
+                        <i class="fas fa-stop"></i>
+                        <span>End Session</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+                <div class="space-y-3">
+                    <button class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2" data-event="click:clearVotes">
+                        <i class="fas fa-refresh"></i>
+                        <span>Clear All Votes</span>
+                    </button>
+                    
+                    <button class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2" data-event="click:exportData">
+                        <i class="fas fa-download"></i>
+                        <span>Export Session Data</span>
+                    </button>
+                    
+                    <button class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2" data-event="click:viewAnalytics">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>View Analytics</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: SessionStats -->
+    </div>
+
+    <!-- Mobile User Voting Interface Preview -->
+    <div class="mt-16 border-t border-slate-700 pt-16">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-white mb-2">User Voting Interface</h2>
+            <p class="text-slate-400">Preview of what users see when they scan your QR code</p>
+        </div>
+
+        <!-- @COMPONENT: MobileVotingInterface -->
+        <div class="max-w-md mx-auto bg-slate-800 border border-slate-700 rounded-3xl p-6 shadow-2xl">
+            <!-- Mobile Header -->
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-gradient-to-r from-primary-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <i class="fas fa-music text-white text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">QR Jukebox</h3>
+                <p class="text-sm text-slate-400" data-bind="admin.name">Admin's Music Session</p>
+                <div class="mt-2 flex items-center justify-center space-x-2">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span class="text-xs text-slate-300">Live Session</span>
+                </div>
+            </div>
+
+            <!-- Currently Playing (Mobile) -->
+            <div class="bg-gradient-to-r from-primary-600/20 to-purple-600/20 border border-primary-500/30 rounded-2xl p-4 mb-6">
+                <div class="flex items-center space-x-3">
+                    <!-- Electronic music album cover with bright LED lights -->
+                    <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=300&h=300" alt="Now playing" class="w-12 h-12 rounded-lg" data-mock="true" />
+                    <div class="flex-1">
+                        <p class="text-xs text-slate-400">Now Playing</p>
+                        <p class="font-medium text-white" data-bind="currentSong.title">Blinding Lights</p>
+                        <p class="text-sm text-slate-300" data-bind="currentSong.artist">The Weeknd</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="flex items-center space-x-1 text-red-400">
+                            <i class="fas fa-heart text-sm"></i>
+                            <span class="text-sm font-semibold" data-bind="currentSong.votes">24</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vote for Songs -->
+            <div>
+                <h4 class="text-lg font-semibold text-white mb-4">Vote for Next Song</h4>
+                <!-- @MAP: availableSongs.map(song => ( -->
+                <div class="space-y-3">
+                    <div class="bg-slate-700/50 border border-slate-600 rounded-xl p-4 flex items-center justify-between hover:bg-slate-700/70 transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <!-- Pop music album cover with vibrant stage lighting -->
+                            <img src="https://pixabay.com/get/gcf415312738164283c8227c40aab182806b87b13e509a60b0cf2172fbe4c46b35ca0ec59ee2d4ab943369970a2be029eca75bfbe97222cc7378aed14e7351d86_1280.jpg" alt="Song artwork" class="w-10 h-10 rounded-lg" data-mock="true" />
+                            <div>
+                                <p class="font-medium text-white text-sm" data-bind="song.title">Good 4 U</p>
+                                <p class="text-xs text-slate-300" data-bind="song.artist">Olivia Rodrigo</p>
+                            </div>
+                        </div>
+                        <button class="bg-red-600 hover:bg-red-700 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors vote-pulse" data-event="click:voteSong">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-heart text-sm"></i>
+                                <span class="text-xs font-bold" data-bind="song.votes">18</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-700/50 border border-slate-600 rounded-xl p-4 flex items-center justify-between hover:bg-slate-700/70 transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <!-- Dance music album cover with disco ball and colorful lights -->
+                            <img src="https://pixabay.com/get/g923a0abd0c2775c76aa6fe0f939124cd081fb85620d09b9808f822120cd7bb4c4fb5762f7a13d6868eae4d7cda757a36b333edb4531d4ea75443b82499d45adb_1280.jpg" alt="Song artwork" class="w-10 h-10 rounded-lg" data-mock="true" />
+                            <div>
+                                <p class="font-medium text-white text-sm" data-bind="song.title">Levitating</p>
+                                <p class="text-xs text-slate-300" data-bind="song.artist">Dua Lipa</p>
+                            </div>
+                        </div>
+                        <button class="bg-red-600 hover:bg-red-700 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors vote-pulse" data-event="click:voteSong">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-heart text-sm"></i>
+                                <span class="text-xs font-bold" data-bind="song.votes">15</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-700/50 border border-slate-600 rounded-xl p-4 flex items-center justify-between hover:bg-slate-700/70 transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <!-- Hip-hop album cover with urban street art style -->
+                            <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=200&h=200" alt="Song artwork" class="w-10 h-10 rounded-lg" data-mock="true" />
+                            <div>
+                                <p class="font-medium text-white text-sm" data-bind="song.title">Stay</p>
+                                <p class="text-xs text-slate-300" data-bind="song.artist">The Kid LAROI & Justin Bieber</p>
+                            </div>
+                        </div>
+                        <button class="bg-red-600 hover:bg-red-700 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors vote-pulse" data-event="click:voteSong">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-heart text-sm"></i>
+                                <span class="text-xs font-bold" data-bind="song.votes">12</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+                <!-- @END_MAP )) -->
+            </div>
+
+            <!-- Mobile Footer -->
+            <div class="mt-6 pt-4 border-t border-slate-600 text-center">
+                <p class="text-xs text-slate-400">Vote for your favorite songs!</p>
+                <p class="text-xs text-slate-500 mt-1">Powered by QR Jukebox</p>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: MobileVotingInterface -->
+    </div>
+</div>
+
+<!-- Add Song Modal (Hidden by default) -->
+<!-- @COMPONENT: AddSongModal -->
+<div id="addSongModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-semibold text-white">Add New Song</h3>
+            <button class="text-slate-400 hover:text-white transition-colors" data-event="click:closeModal">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        
+        <form class="space-y-4" data-event="submit:addSongToPlaylist">
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Song Title</label>
+                <input type="text" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-primary-500 transition-colors" placeholder="Enter song title" data-bind="newSong.title" />
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Artist</label>
+                <input type="text" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-primary-500 transition-colors" placeholder="Enter artist name" data-bind="newSong.artist" />
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Album Art URL (Optional)</label>
+                <input type="url" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-primary-500 transition-colors" placeholder="https://..." data-bind="newSong.albumArt" />
+            </div>
+            
+            <div class="flex space-x-3 pt-4">
+                <button type="button" class="flex-1 bg-slate-600 hover:bg-slate-500 text-white py-3 px-4 rounded-lg font-medium transition-colors" data-event="click:closeModal">Cancel</button>
+                <button type="submit" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-3 px-4 rounded-lg font-medium transition-colors">Add Song</button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- @END_COMPONENT: AddSongModal -->
+
+<script>
+// TODO: Implement real-time voting system with WebSocket or polling
+// TODO: Implement QR code generation using library like qrcode.js
+// TODO: Add music player integration (Spotify Web API, YouTube API, etc.)
+// TODO: Implement persistent session storage
+// TODO: Add user authentication and session management
+
+(function() {
+    // Mock functionality for demonstration
+    let currentVotes = {
+        'blinding-lights': 24,
+        'good-4-u': 18,
+        'levitating': 15,
+        'stay': 12
+    };
+
+    // Simulate real-time vote updates
+    function simulateVoteUpdates() {
+        const songs = Object.keys(currentVotes);
+        const randomSong = songs[Math.floor(Math.random() * songs.length)];
+        if (Math.random() > 0.7) { // 30% chance of vote update
+            currentVotes[randomSong]++;
+            updateVoteDisplays();
+        }
+    }
+
+    function updateVoteDisplays() {
+        // Update vote counts in the DOM
+        document.querySelectorAll('[data-bind*="votes"]').forEach(element => {
+            // This would be handled by the React state management
+            const mockUpdate = Math.floor(Math.random() * 30) + 10;
+            if (element.textContent.match(/\d+/)) {
+                element.textContent = element.textContent.replace(/\d+/, mockUpdate);
+            }
+        });
+    }
+
+    // Handle voting button clicks
+    document.addEventListener('click', function(e) {
+        const button = e.target.closest('[data-event*="voteSong"]');
+        if (button) {
+            button.classList.add('vote-pulse');
+            setTimeout(() => button.classList.remove('vote-pulse'), 600);
+            
+            // TODO: Send vote to backend API
+            console.log('Vote registered for song');
+        }
+
+        // Handle modal opening
+        const addSongBtn = e.target.closest('[data-event*="addSong"]');
+        if (addSongBtn) {
+            document.getElementById('addSongModal').classList.remove('hidden');
+            document.getElementById('addSongModal').classList.add('flex');
+        }
+
+        // Handle modal closing
+        const closeModalBtn = e.target.closest('[data-event*="closeModal"]');
+        if (closeModalBtn) {
+            document.getElementById('addSongModal').classList.add('hidden');
+            document.getElementById('addSongModal').classList.remove('flex');
+        }
+    });
+
+    // Simulate live session activity
+    setInterval(simulateVoteUpdates, 3000);
+
+    // Initialize session stats animation
+    setTimeout(() => {
+        updateVoteDisplays();
+    }, 1000);
+})();
+</script>
+
+</body>
+</html>

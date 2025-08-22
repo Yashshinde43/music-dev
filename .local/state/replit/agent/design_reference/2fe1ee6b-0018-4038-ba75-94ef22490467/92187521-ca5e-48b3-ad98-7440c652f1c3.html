@@ -1,0 +1,702 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Jukebox - Collaborative Music Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                        accent: '#06b6d4',
+                        success: '#10b981',
+                        slate: {
+                            850: '#1a202c',
+                            950: '#0d1117'
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-subtle': 'bounce 2s infinite',
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-50 font-sans">
+    <!-- @COMPONENT: AppLayout -->
+    <div class="min-h-screen flex">
+        <!-- @COMPONENT: Sidebar -->
+        <aside class="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+            <div class="flex flex-col flex-grow bg-slate-800 overflow-y-auto border-r border-slate-700">
+                <!-- @COMPONENT: Logo -->
+                <div class="flex items-center flex-shrink-0 px-6 py-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                            <i class="fas fa-music text-white text-lg"></i>
+                        </div>
+                        <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">QR Jukebox</h1>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: Logo -->
+
+                <!-- @COMPONENT: Navigation -->
+                <nav class="flex-1 px-4 pb-4 space-y-2">
+                    <a href="#" class="bg-slate-700 text-white group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors">
+                        <i class="fas fa-tachometer-alt mr-3 text-primary"></i>
+                        Dashboard
+                    </a>
+                    <a href="#" class="text-slate-300 hover:bg-slate-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors">
+                        <i class="fas fa-list-music mr-3"></i>
+                        My Playlists
+                    </a>
+                    <a href="#" class="text-slate-300 hover:bg-slate-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors">
+                        <i class="fas fa-qrcode mr-3"></i>
+                        QR Codes
+                    </a>
+                    <a href="#" class="text-slate-300 hover:bg-slate-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        Analytics
+                    </a>
+                    <a href="#" class="text-slate-300 hover:bg-slate-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors">
+                        <i class="fas fa-cog mr-3"></i>
+                        Settings
+                    </a>
+                </nav>
+                <!-- @END_COMPONENT: Navigation -->
+
+                <!-- @COMPONENT: UserProfile -->
+                <div class="border-t border-slate-700 p-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-accent to-success rounded-full flex items-center justify-center">
+                            <span class="text-xs font-semibold text-white" data-bind="user.initials">JD</span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium text-white truncate" data-bind="user.name">John Doe</p>
+                            <p class="text-xs text-slate-400 truncate" data-bind="user.email">john@example.com</p>
+                        </div>
+                        <button class="text-slate-400 hover:text-white transition-colors">
+                            <i class="fas fa-sign-out-alt text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: UserProfile -->
+            </div>
+        </aside>
+        <!-- @END_COMPONENT: Sidebar -->
+
+        <!-- @COMPONENT: MainContent -->
+        <div class="lg:pl-64 flex flex-col flex-1">
+            <!-- @COMPONENT: MobileHeader -->
+            <div class="lg:hidden bg-slate-800 border-b border-slate-700 px-4 py-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-music text-white text-sm"></i>
+                        </div>
+                        <h1 class="text-lg font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">QR Jukebox</h1>
+                    </div>
+                    <button class="text-slate-400 hover:text-white transition-colors">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: MobileHeader -->
+
+            <!-- @COMPONENT: PageHeader -->
+            <header class="bg-slate-800 border-b border-slate-700 px-6 py-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Dashboard</h2>
+                        <p class="text-slate-400 mt-1">Manage your collaborative jukebox experience</p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button class="inline-flex items-center px-4 py-2 border border-slate-600 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+                            <i class="fas fa-plus mr-2"></i>
+                            New Playlist
+                        </button>
+                        <button class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary to-secondary rounded-lg text-sm font-medium text-white hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg hover:shadow-xl">
+                            <i class="fas fa-qrcode mr-2"></i>
+                            Share QR Code
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <!-- @END_COMPONENT: PageHeader -->
+
+            <!-- @COMPONENT: DashboardContent -->
+            <main class="flex-1 px-6 py-6 space-y-6">
+                <!-- @COMPONENT: StatsGrid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                    <!-- @STATE: activeUsers:number, totalVotes:number, currentSong:object, playlistLength:number -->
+                    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 animate-fade-in">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-400 text-sm font-medium">Active Users</p>
+                                <p class="text-2xl font-bold text-white mt-1" data-bind="stats.activeUsers">12</p>
+                            </div>
+                            <div class="w-12 h-12 bg-gradient-to-br from-success to-emerald-400 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-users text-white text-lg"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <i class="fas fa-arrow-up text-success mr-1"></i>
+                            <span class="text-success font-medium">+23%</span>
+                            <span class="text-slate-400 ml-1">vs last hour</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 animate-fade-in" style="animation-delay: 0.1s">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-400 text-sm font-medium">Total Votes</p>
+                                <p class="text-2xl font-bold text-white mt-1" data-bind="stats.totalVotes">247</p>
+                            </div>
+                            <div class="w-12 h-12 bg-gradient-to-br from-accent to-cyan-400 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-vote-yea text-white text-lg"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <i class="fas fa-arrow-up text-success mr-1"></i>
+                            <span class="text-success font-medium">+12</span>
+                            <span class="text-slate-400 ml-1">in last 5 min</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 animate-fade-in" style="animation-delay: 0.2s">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-400 text-sm font-medium">Playlist Songs</p>
+                                <p class="text-2xl font-bold text-white mt-1" data-bind="stats.playlistLength">38</p>
+                            </div>
+                            <div class="w-12 h-12 bg-gradient-to-br from-secondary to-purple-400 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-list-music text-white text-lg"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <i class="fas fa-plus text-success mr-1"></i>
+                            <span class="text-success font-medium">3 new</span>
+                            <span class="text-slate-400 ml-1">today</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 animate-fade-in" style="animation-delay: 0.3s">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-400 text-sm font-medium">Avg Session</p>
+                                <p class="text-2xl font-bold text-white mt-1">24m</p>
+                            </div>
+                            <div class="w-12 h-12 bg-gradient-to-br from-primary to-indigo-400 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-clock text-white text-lg"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <i class="fas fa-arrow-up text-success mr-1"></i>
+                            <span class="text-success font-medium">+5m</span>
+                            <span class="text-slate-400 ml-1">vs yesterday</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: StatsGrid -->
+
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <!-- @COMPONENT: CurrentlyPlaying -->
+                    <div class="xl:col-span-2">
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                            <div class="p-6 border-b border-slate-700">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-lg font-semibold text-white">Currently Playing</h3>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                        <span class="text-sm text-slate-400">Live</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-6">
+                                <!-- Current song display with album art -->
+                                <div class="flex items-center space-x-4 mb-6" data-bind="currentSong">
+                                    <!-- Album art placeholder - represents song artwork from iTunes API -->
+                                    <div class="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-music text-white text-2xl"></i>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <h4 class="text-lg font-semibold text-white truncate" data-bind="currentSong.title">Blinding Lights</h4>
+                                        <p class="text-slate-400 truncate" data-bind="currentSong.artist">The Weeknd</p>
+                                        <p class="text-sm text-slate-500 truncate" data-bind="currentSong.album">After Hours</p>
+                                        <div class="flex items-center mt-2 space-x-2">
+                                            <div class="flex items-center text-sm text-accent">
+                                                <i class="fas fa-thumbs-up mr-1"></i>
+                                                <span data-bind="currentSong.votes">23 votes</span>
+                                            </div>
+                                            <span class="text-slate-600">•</span>
+                                            <span class="text-sm text-slate-400" data-bind="currentSong.duration">3:22</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-center space-y-2">
+                                        <button class="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center hover:shadow-lg transition-all" data-event="click:togglePlayback">
+                                            <i class="fas fa-pause text-white text-lg"></i>
+                                        </button>
+                                        <button class="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center transition-colors" data-event="click:skipSong">
+                                            <i class="fas fa-forward text-white text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Progress bar -->
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between text-sm text-slate-400">
+                                        <span data-bind="currentSong.currentTime">1:24</span>
+                                        <span data-bind="currentSong.duration">3:22</span>
+                                    </div>
+                                    <div class="w-full bg-slate-700 rounded-full h-2">
+                                        <div class="bg-gradient-to-r from-primary to-secondary h-2 rounded-full transition-all duration-500" style="width: 42%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- @COMPONENT: TopVotedSongs -->
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 mt-6">
+                            <div class="p-6 border-b border-slate-700">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-lg font-semibold text-white">Top Voted Songs</h3>
+                                    <button class="text-primary hover:text-blue-400 text-sm font-medium transition-colors" data-event="click:viewAllSongs">
+                                        View All
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="divide-y divide-slate-700">
+                                <!-- @MAP: topVotedSongs.map((song, index) => ( -->
+                                <div class="p-4 hover:bg-slate-700/50 transition-colors" data-mock="true">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg text-white font-bold text-sm">
+                                            1
+                                        </div>
+                                        <div class="w-12 h-12 bg-gradient-to-br from-accent to-cyan-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-music text-white"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-white font-medium truncate" data-bind="song.title">Save Your Tears</p>
+                                            <p class="text-slate-400 text-sm truncate" data-bind="song.artist">The Weeknd</p>
+                                        </div>
+                                        <div class="flex items-center space-x-3">
+                                            <div class="flex items-center text-sm text-accent">
+                                                <i class="fas fa-thumbs-up mr-1"></i>
+                                                <span data-bind="song.votes">18</span>
+                                            </div>
+                                            <button class="text-slate-400 hover:text-white transition-colors" data-event="click:playNow" data-implementation="Should immediately play this song">
+                                                <i class="fas fa-play text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 hover:bg-slate-700/50 transition-colors" data-mock="true">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-slate-500 to-slate-600 rounded-lg text-white font-bold text-sm">
+                                            2
+                                        </div>
+                                        <div class="w-12 h-12 bg-gradient-to-br from-secondary to-purple-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-music text-white"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-white font-medium truncate">Good 4 U</p>
+                                            <p class="text-slate-400 text-sm truncate">Olivia Rodrigo</p>
+                                        </div>
+                                        <div class="flex items-center space-x-3">
+                                            <div class="flex items-center text-sm text-accent">
+                                                <i class="fas fa-thumbs-up mr-1"></i>
+                                                <span>15</span>
+                                            </div>
+                                            <button class="text-slate-400 hover:text-white transition-colors">
+                                                <i class="fas fa-play text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 hover:bg-slate-700/50 transition-colors" data-mock="true">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-amber-600 to-yellow-600 rounded-lg text-white font-bold text-sm">
+                                            3
+                                        </div>
+                                        <div class="w-12 h-12 bg-gradient-to-br from-success to-emerald-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-music text-white"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-white font-medium truncate">Levitating</p>
+                                            <p class="text-slate-400 text-sm truncate">Dua Lipa</p>
+                                        </div>
+                                        <div class="flex items-center space-x-3">
+                                            <div class="flex items-center text-sm text-accent">
+                                                <i class="fas fa-thumbs-up mr-1"></i>
+                                                <span>12</span>
+                                            </div>
+                                            <button class="text-slate-400 hover:text-white transition-colors">
+                                                <i class="fas fa-play text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                            </div>
+                        </div>
+                        <!-- @END_COMPONENT: TopVotedSongs -->
+                    </div>
+                    <!-- @END_COMPONENT: CurrentlyPlaying -->
+
+                    <!-- @COMPONENT: QRCodePanel -->
+                    <div class="space-y-6">
+                        <!-- QR Code Card -->
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                            <div class="p-6 border-b border-slate-700">
+                                <h3 class="text-lg font-semibold text-white">Your QR Code</h3>
+                                <p class="text-slate-400 text-sm mt-1">Share this with your audience</p>
+                            </div>
+                            
+                            <div class="p-6 text-center">
+                                <!-- QR Code placeholder - would be generated with unique admin ID -->
+                                <div class="w-48 h-48 mx-auto bg-white rounded-xl p-4 mb-4" data-implementation="Generate QR code with admin's unique URL">
+                                    <div class="w-full h-full bg-slate-900 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-qrcode text-6xl text-white"></i>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-3">
+                                    <p class="text-sm text-slate-400">Scan to join the jukebox</p>
+                                    <div class="flex space-x-2">
+                                        <button class="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-blue-600 hover:to-purple-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200" data-event="click:downloadQR">
+                                            <i class="fas fa-download mr-2"></i>
+                                            Download
+                                        </button>
+                                        <button class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors" data-event="click:shareQR">
+                                            <i class="fas fa-share mr-2"></i>
+                                            Share
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 p-3 bg-slate-700 rounded-lg">
+                                    <p class="text-xs text-slate-400 mb-1">Direct Link</p>
+                                    <p class="text-sm text-white font-mono break-all" data-bind="admin.uniqueUrl">jukebox.app/j/abc123</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="bg-slate-800 rounded-xl border border-slate-700">
+                            <div class="p-6 border-b border-slate-700">
+                                <h3 class="text-lg font-semibold text-white">Recent Activity</h3>
+                            </div>
+                            
+                            <div class="p-6 space-y-4">
+                                <!-- @MAP: recentActivity.map(activity => ( -->
+                                <div class="flex items-start space-x-3" data-mock="true">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-success to-emerald-400 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-thumbs-up text-white text-xs"></i>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm text-white">
+                                            <span class="font-medium" data-bind="activity.user">User_5429</span> voted for 
+                                            <span class="font-medium text-accent" data-bind="activity.song">Save Your Tears</span>
+                                        </p>
+                                        <p class="text-xs text-slate-400" data-bind="activity.timestamp">2 minutes ago</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-start space-x-3" data-mock="true">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-secondary to-purple-400 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-user-plus text-white text-xs"></i>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm text-white">
+                                            <span class="font-medium">User_8372</span> joined the session
+                                        </p>
+                                        <p class="text-xs text-slate-400">5 minutes ago</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-start space-x-3" data-mock="true">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-accent to-cyan-400 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-plus text-white text-xs"></i>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm text-white">
+                                            <span class="font-medium">User_2841</span> added 
+                                            <span class="font-medium text-accent">Good 4 U</span> to queue
+                                        </p>
+                                        <p class="text-xs text-slate-400">8 minutes ago</p>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                                
+                                <div class="pt-2">
+                                    <button class="text-primary hover:text-blue-400 text-sm font-medium transition-colors" data-event="click:viewFullActivity">
+                                        View all activity
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: QRCodePanel -->
+                </div>
+
+                <!-- @COMPONENT: AddSongModal (Hidden by default) -->
+                <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden" id="addSongModal" data-state="isAddSongModalOpen:boolean = false">
+                    <div class="flex items-center justify-center min-h-screen p-4">
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-hidden animate-slide-up">
+                            <div class="p-6 border-b border-slate-700">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-lg font-semibold text-white">Add Songs to Playlist</h3>
+                                    <button class="text-slate-400 hover:text-white transition-colors" data-event="click:closeModal">
+                                        <i class="fas fa-times text-xl"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="p-6">
+                                <!-- @FUNCTIONALITY: This search should integrate with iTunes Search API -->
+                                <div class="relative mb-6">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search for songs, artists, or albums..." 
+                                        class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 pl-10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                        data-event="input:searchSongs"
+                                        data-implementation="Should search iTunes API and display results below"
+                                    >
+                                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                                </div>
+
+                                <!-- Search Results -->
+                                <div class="space-y-3 max-h-96 overflow-y-auto">
+                                    <!-- @MAP: searchResults.map(song => ( -->
+                                    <div class="flex items-center space-x-4 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors" data-mock="true">
+                                        <div class="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-music text-white"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-white font-medium truncate">Watermelon Sugar</p>
+                                            <p class="text-slate-400 text-sm truncate">Harry Styles • Fine Line</p>
+                                            <p class="text-slate-500 text-xs">2:54</p>
+                                        </div>
+                                        <button class="bg-primary hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors" data-event="click:addToPlaylist">
+                                            Add
+                                        </button>
+                                    </div>
+
+                                    <div class="flex items-center space-x-4 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors" data-mock="true">
+                                        <div class="w-12 h-12 bg-gradient-to-br from-accent to-cyan-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-music text-white"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-white font-medium truncate">As It Was</p>
+                                            <p class="text-slate-400 text-sm truncate">Harry Styles • Harry's House</p>
+                                            <p class="text-slate-500 text-xs">2:47</p>
+                                        </div>
+                                        <button class="bg-primary hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors">
+                                            Add
+                                        </button>
+                                    </div>
+
+                                    <div class="flex items-center space-x-4 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors" data-mock="true">
+                                        <div class="w-12 h-12 bg-gradient-to-br from-secondary to-purple-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-music text-white"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-white font-medium truncate">Music For a Sushi Restaurant</p>
+                                            <p class="text-slate-400 text-sm truncate">Harry Styles • Harry's House</p>
+                                            <p class="text-slate-500 text-xs">3:13</p>
+                                        </div>
+                                        <button class="bg-primary hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors">
+                                            Add
+                                        </button>
+                                    </div>
+                                    <!-- @END_MAP )) -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: AddSongModal -->
+
+                <!-- @COMPONENT: UserVotingInterface (Mobile Preview) -->
+                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                    <div class="p-6 border-b border-slate-700">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-white">User Voting Interface Preview</h3>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                Mobile View
+                            </span>
+                        </div>
+                        <p class="text-slate-400 text-sm mt-1">How users see your jukebox after scanning the QR code</p>
+                    </div>
+                    
+                    <div class="p-6 bg-slate-900">
+                        <!-- Mobile device mockup -->
+                        <div class="max-w-sm mx-auto bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-2xl">
+                            <!-- Mobile header -->
+                            <div class="text-center mb-6">
+                                <div class="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl mx-auto mb-3 flex items-center justify-center">
+                                    <i class="fas fa-music text-white text-lg"></i>
+                                </div>
+                                <h4 class="text-lg font-bold text-white">QR Jukebox</h4>
+                                <p class="text-slate-400 text-sm" data-bind="admin.name">John's Playlist</p>
+                            </div>
+
+                            <!-- Currently playing on mobile -->
+                            <div class="bg-slate-700 rounded-xl p-4 mb-6">
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-music text-white"></i>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-white font-medium text-sm truncate">Blinding Lights</p>
+                                        <p class="text-slate-400 text-xs truncate">The Weeknd</p>
+                                    </div>
+                                    <div class="flex items-center text-xs text-accent">
+                                        <i class="fas fa-headphones mr-1"></i>
+                                        <span>Now Playing</span>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-slate-600 rounded-full h-1.5">
+                                    <div class="bg-gradient-to-r from-primary to-secondary h-1.5 rounded-full" style="width: 42%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Vote for next songs -->
+                            <div class="space-y-3">
+                                <h5 class="text-white font-medium text-sm">Vote for Next Song</h5>
+                                
+                                <!-- @MAP: availableSongs.map(song => ( -->
+                                <div class="bg-slate-700 rounded-lg p-3" data-mock="true">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-accent to-cyan-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-music text-white text-sm"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-white text-sm font-medium truncate">Save Your Tears</p>
+                                            <p class="text-slate-400 text-xs truncate">The Weeknd</p>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs text-accent font-medium">18</span>
+                                            <button class="w-8 h-8 bg-primary hover:bg-blue-600 rounded-lg flex items-center justify-center transition-colors" data-event="click:voteForSong">
+                                                <i class="fas fa-thumbs-up text-white text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-700 rounded-lg p-3" data-mock="true">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-secondary to-purple-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-music text-white text-sm"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-white text-sm font-medium truncate">Good 4 U</p>
+                                            <p class="text-slate-400 text-xs truncate">Olivia Rodrigo</p>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs text-accent font-medium">15</span>
+                                            <button class="w-8 h-8 bg-slate-600 hover:bg-primary rounded-lg flex items-center justify-center transition-colors">
+                                                <i class="fas fa-thumbs-up text-white text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-700 rounded-lg p-3" data-mock="true">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-success to-emerald-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-music text-white text-sm"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-white text-sm font-medium truncate">Levitating</p>
+                                            <p class="text-slate-400 text-xs truncate">Dua Lipa</p>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs text-accent font-medium">12</span>
+                                            <button class="w-8 h-8 bg-slate-600 hover:bg-primary rounded-lg flex items-center justify-center transition-colors">
+                                                <i class="fas fa-thumbs-up text-white text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                            </div>
+
+                            <!-- Add song suggestion -->
+                            <div class="mt-4 pt-4 border-t border-slate-600">
+                                <button class="w-full bg-gradient-to-r from-primary to-secondary hover:from-blue-600 hover:to-purple-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200" data-event="click:suggestSong" data-implementation="Should open song search interface for users">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Suggest a Song
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: UserVotingInterface -->
+            </main>
+            <!-- @END_COMPONENT: DashboardContent -->
+        </div>
+        <!-- @END_COMPONENT: MainContent -->
+    </div>
+    <!-- @END_COMPONENT: AppLayout -->
+
+    <script>
+        // TODO: Implement WebSocket connections for real-time updates
+        // TODO: Implement iTunes Search API integration
+        // TODO: Implement QR code generation
+        // TODO: Implement vote tracking and automatic song switching
+        // TODO: Implement user authentication and admin management
+        
+        (function() {
+            // Basic interactivity for demo purposes
+            const modal = document.getElementById('addSongModal');
+            
+            // Modal controls would be implemented here
+            function toggleModal() {
+                if (modal) {
+                    modal.classList.toggle('hidden');
+                }
+            }
+            
+            // Real-time vote simulation (would be replaced with WebSocket)
+            function simulateRealTimeUpdates() {
+                // This would be replaced with actual WebSocket implementation
+                console.log('Real-time updates would be handled via WebSocket connections');
+            }
+            
+            // Initialize app
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('QR Jukebox Dashboard Loaded');
+                // TODO: Initialize WebSocket connections
+                // TODO: Load initial data from API
+                // TODO: Set up real-time vote tracking
+            });
+        })();
+    </script>
+</body>
+</html>

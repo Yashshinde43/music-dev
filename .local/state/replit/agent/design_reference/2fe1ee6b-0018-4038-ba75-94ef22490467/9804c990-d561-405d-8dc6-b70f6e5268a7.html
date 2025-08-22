@@ -1,0 +1,629 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyncJuke - QR-Powered Collaborative Jukebox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'spotify': '#1DB954',
+                        'dark': '#191414',
+                        'darker': '#121212',
+                        'accent': '#FF6B35',
+                        'gray-light': '#B3B3B3'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-subtle': 'bounce 1s ease-in-out 3'
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-darker text-white font-inter min-h-screen">
+    <!-- @COMPONENT: AppLayout -->
+    
+    <!-- Navigation Header -->
+    <nav class="bg-dark/80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-music text-spotify text-2xl"></i>
+                    <h1 class="text-xl font-bold text-white">SyncJuke</h1>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-6">
+                    <button data-tab="admin" class="tab-btn px-4 py-2 rounded-lg bg-spotify text-white font-medium">
+                        <i class="fas fa-cog mr-2"></i>Admin Dashboard
+                    </button>
+                    <button data-tab="voting" class="tab-btn px-4 py-2 rounded-lg bg-gray-700 text-gray-light hover:bg-gray-600 font-medium">
+                        <i class="fas fa-vote-yea mr-2"></i>Voting Interface
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Tab Selector -->
+    <div class="md:hidden bg-dark border-b border-gray-800">
+        <div class="flex">
+            <button data-tab="admin" class="tab-btn flex-1 py-3 text-center bg-spotify text-white">
+                <i class="fas fa-cog mr-2"></i>Admin
+            </button>
+            <button data-tab="voting" class="tab-btn flex-1 py-3 text-center bg-gray-700 text-gray-light">
+                <i class="fas fa-vote-yea mr-2"></i>Voting
+            </button>
+        </div>
+    </div>
+
+    <!-- @COMPONENT: AdminDashboard [playlist management, QR generation] -->
+    <div id="admin-view" class="tab-content">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- Dashboard Header -->
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold mb-2">Admin Dashboard</h2>
+                <p class="text-gray-light">Manage your collaborative playlists and sessions</p>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-gradient-to-br from-spotify/20 to-spotify/5 border border-spotify/30 rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-light text-sm">Active Sessions</p>
+                            <p class="text-2xl font-bold" data-bind="stats.activeSessions">3</p>
+                        </div>
+                        <i class="fas fa-play-circle text-spotify text-2xl"></i>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-accent/20 to-accent/5 border border-accent/30 rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-light text-sm">Total Votes</p>
+                            <p class="text-2xl font-bold" data-bind="stats.totalVotes">247</p>
+                        </div>
+                        <i class="fas fa-thumbs-up text-accent text-2xl"></i>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30 rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-light text-sm">Songs Queued</p>
+                            <p class="text-2xl font-bold" data-bind="stats.songsQueued">18</p>
+                        </div>
+                        <i class="fas fa-list text-blue-500 text-2xl"></i>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/30 rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-light text-sm">Active Users</p>
+                            <p class="text-2xl font-bold" data-bind="stats.activeUsers">42</p>
+                        </div>
+                        <i class="fas fa-users text-purple-500 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Playlist Management -->
+                <div class="lg:col-span-2">
+                    <div class="bg-dark/50 border border-gray-800 rounded-xl p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-semibold">Current Playlist: "Friday Vibes"</h3>
+                            <button class="bg-spotify hover:bg-green-600 px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Add Songs
+                            </button>
+                        </div>
+
+                        <!-- Now Playing -->
+                        <div class="bg-gradient-to-r from-spotify/20 to-accent/20 border border-spotify/30 rounded-lg p-4 mb-6">
+                            <div class="flex items-center space-x-4">
+                                <!-- A vibrant album cover showing an abstract music visualization with colorful waveforms -->
+                                <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100" 
+                                     alt="Now playing album cover" class="w-16 h-16 rounded-lg object-cover">
+                                <div class="flex-1">
+                                    <p class="font-semibold" data-bind="nowPlaying.title">Blinding Lights</p>
+                                    <p class="text-gray-light text-sm" data-bind="nowPlaying.artist">The Weeknd</p>
+                                    <div class="flex items-center space-x-2 mt-2">
+                                        <span class="text-xs bg-spotify/20 text-spotify px-2 py-1 rounded-full">
+                                            <i class="fas fa-crown mr-1"></i>Most Voted
+                                        </span>
+                                        <span class="text-xs text-gray-light" data-bind="nowPlaying.votes">23 votes</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button class="text-gray-light hover:text-white">
+                                        <i class="fas fa-step-backward"></i>
+                                    </button>
+                                    <button class="bg-spotify hover:bg-green-600 w-10 h-10 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-pause"></i>
+                                    </button>
+                                    <button class="text-gray-light hover:text-white">
+                                        <i class="fas fa-step-forward"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Audio Progress -->
+                            <div class="mt-4">
+                                <div class="flex justify-between text-xs text-gray-light mb-1">
+                                    <span>1:23</span>
+                                    <span>3:45</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-spotify h-2 rounded-full" style="width: 35%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Song Queue -->
+                        <div class="space-y-3">
+                            <!-- @MAP: songs.map(song => ( -->
+                            <div class="bg-gray-800/50 hover:bg-gray-800 border border-gray-700 rounded-lg p-4 transition-colors" data-mock="true">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <!-- A colorful album cover with geometric patterns and vibrant colors -->
+                                        <img src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80" 
+                                             alt="Album cover" class="w-12 h-12 rounded-md object-cover">
+                                        <div>
+                                            <p class="font-medium" data-bind="song.title">Good 4 U</p>
+                                            <p class="text-gray-light text-sm" data-bind="song.artist">Olivia Rodrigo</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="flex items-center space-x-1">
+                                                <i class="fas fa-thumbs-up text-spotify text-sm"></i>
+                                                <span class="text-sm font-medium animate-pulse-slow" data-bind="song.votes">18</span>
+                                            </div>
+                                            <div class="w-16 bg-gray-700 rounded-full h-2">
+                                                <div class="bg-gradient-to-r from-spotify to-accent h-2 rounded-full" style="width: 72%"></div>
+                                            </div>
+                                        </div>
+                                        <button class="text-gray-light hover:text-red-400 transition-colors">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-800/50 hover:bg-gray-800 border border-gray-700 rounded-lg p-4 transition-colors" data-mock="true">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <!-- A modern album cover with neon synthwave aesthetics and gradient backgrounds -->
+                                        <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80" 
+                                             alt="Album cover" class="w-12 h-12 rounded-md object-cover">
+                                        <div>
+                                            <p class="font-medium" data-bind="song.title">Levitating</p>
+                                            <p class="text-gray-light text-sm" data-bind="song.artist">Dua Lipa</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="flex items-center space-x-1">
+                                                <i class="fas fa-thumbs-up text-spotify text-sm"></i>
+                                                <span class="text-sm font-medium" data-bind="song.votes">15</span>
+                                            </div>
+                                            <div class="w-16 bg-gray-700 rounded-full h-2">
+                                                <div class="bg-gradient-to-r from-spotify to-accent h-2 rounded-full" style="width: 60%"></div>
+                                            </div>
+                                        </div>
+                                        <button class="text-gray-light hover:text-red-400 transition-colors">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-800/50 hover:bg-gray-800 border border-gray-700 rounded-lg p-4 transition-colors" data-mock="true">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <!-- A stylized album cover with abstract art and bold typography -->
+                                        <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80" 
+                                             alt="Album cover" class="w-12 h-12 rounded-md object-cover">
+                                        <div>
+                                            <p class="font-medium" data-bind="song.title">Stay</p>
+                                            <p class="text-gray-light text-sm" data-bind="song.artist">The Kid LAROI & Justin Bieber</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="flex items-center space-x-1">
+                                                <i class="fas fa-thumbs-up text-spotify text-sm"></i>
+                                                <span class="text-sm font-medium" data-bind="song.votes">12</span>
+                                            </div>
+                                            <div class="w-16 bg-gray-700 rounded-full h-2">
+                                                <div class="bg-gradient-to-r from-spotify to-accent h-2 rounded-full" style="width: 48%"></div>
+                                            </div>
+                                        </div>
+                                        <button class="text-gray-light hover:text-red-400 transition-colors">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Controls -->
+                <div class="space-y-6">
+                    
+                    <!-- QR Code Generation -->
+                    <div class="bg-dark/50 border border-gray-800 rounded-xl p-6">
+                        <h3 class="text-xl font-semibold mb-4">Session QR Code</h3>
+                        
+                        <div class="text-center mb-4">
+                            <div class="bg-white p-4 rounded-lg inline-block mb-4">
+                                <!-- QR Code placeholder - would be generated by qrcode library -->
+                                <div class="w-32 h-32 bg-gray-200 flex items-center justify-center rounded">
+                                    <i class="fas fa-qrcode text-gray-600 text-4xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-light">Session ID: <span class="font-mono text-spotify" data-bind="session.id">FV2024</span></p>
+                        </div>
+
+                        <button class="w-full bg-spotify hover:bg-green-600 py-3 rounded-lg font-medium transition-colors mb-3">
+                            <i class="fas fa-download mr-2"></i>Download QR Code
+                        </button>
+                        
+                        <button class="w-full bg-gray-700 hover:bg-gray-600 py-3 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-link mr-2"></i>Copy Link
+                        </button>
+                    </div>
+
+                    <!-- Session Settings -->
+                    <div class="bg-dark/50 border border-gray-800 rounded-xl p-6">
+                        <h3 class="text-xl font-semibold mb-4">Session Settings</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Session Name</label>
+                                <input type="text" data-bind="session.name" value="Friday Vibes" 
+                                       class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:border-spotify focus:outline-none">
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Allow Song Requests</span>
+                                <button class="bg-spotify w-12 h-6 rounded-full relative">
+                                    <div class="w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5"></div>
+                                </button>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Auto-play Next Song</span>
+                                <button class="bg-spotify w-12 h-6 rounded-full relative">
+                                    <div class="w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5"></div>
+                                </button>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Max Votes per User</label>
+                                <select class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:border-spotify focus:outline-none">
+                                    <option>1 vote</option>
+                                    <option selected>3 votes</option>
+                                    <option>5 votes</option>
+                                    <option>Unlimited</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="w-full bg-red-600 hover:bg-red-700 py-3 rounded-lg font-medium transition-colors mt-6">
+                            <i class="fas fa-stop mr-2"></i>End Session
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: AdminDashboard -->
+
+    <!-- @COMPONENT: VotingInterface [mobile-optimized voting UI] -->
+    <div id="voting-view" class="tab-content hidden">
+        <div class="max-w-md mx-auto px-4 py-6">
+            
+            <!-- Session Header -->
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold mb-2">🎵 Friday Vibes</h2>
+                <p class="text-gray-light">Vote for your favorite songs!</p>
+                <div class="flex items-center justify-center space-x-2 mt-3">
+                    <div class="w-2 h-2 bg-spotify rounded-full animate-pulse"></div>
+                    <span class="text-xs text-spotify font-medium">Live Session</span>
+                    <span class="text-xs text-gray-light" data-bind="session.activeUsers">42 people voting</span>
+                </div>
+            </div>
+
+            <!-- Your Votes Counter -->
+            <div class="bg-gradient-to-r from-spotify/20 to-accent/20 border border-spotify/30 rounded-xl p-4 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-light">Your votes remaining</p>
+                        <p class="text-2xl font-bold" data-bind="user.votesRemaining">2 / 3</p>
+                    </div>
+                    <i class="fas fa-vote-yea text-spotify text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Now Playing -->
+            <div class="bg-dark/50 border border-gray-800 rounded-xl p-4 mb-6">
+                <div class="flex items-center space-x-3 mb-3">
+                    <div class="w-2 h-2 bg-spotify rounded-full animate-pulse"></div>
+                    <span class="text-sm font-medium text-spotify">Now Playing</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- A vibrant album cover showing an abstract music visualization with colorful waveforms -->
+                    <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60" 
+                         alt="Now playing album cover" class="w-15 h-15 rounded-lg object-cover">
+                    <div class="flex-1">
+                        <p class="font-semibold" data-bind="nowPlaying.title">Blinding Lights</p>
+                        <p class="text-gray-light text-sm" data-bind="nowPlaying.artist">The Weeknd</p>
+                        <div class="flex items-center space-x-2 mt-1">
+                            <span class="text-xs bg-spotify/20 text-spotify px-2 py-1 rounded-full">
+                                <i class="fas fa-crown mr-1"></i>Most Voted
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voting Cards -->
+            <div class="space-y-4 mb-6">
+                <h3 class="text-lg font-semibold mb-4">Vote for Next Song</h3>
+                
+                <!-- @MAP: votingSongs.map(song => ( -->
+                <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-spotify/50 transition-all" data-mock="true">
+                    <div class="flex items-center space-x-4">
+                        <!-- A colorful album cover with geometric patterns and vibrant colors -->
+                        <img src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60" 
+                             alt="Album cover" class="w-15 h-15 rounded-lg object-cover">
+                        <div class="flex-1">
+                            <p class="font-medium" data-bind="song.title">Good 4 U</p>
+                            <p class="text-gray-light text-sm" data-bind="song.artist">Olivia Rodrigo</p>
+                            <div class="flex items-center space-x-2 mt-2">
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-thumbs-up text-spotify text-sm"></i>
+                                    <span class="text-sm font-medium" data-bind="song.votes">18</span>
+                                </div>
+                                <div class="w-20 bg-gray-700 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-spotify to-accent h-2 rounded-full transition-all duration-500" style="width: 72%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button data-event="click:voteForSong" data-implementation="Should update vote count and disable if max votes reached" 
+                                class="bg-spotify hover:bg-green-600 px-4 py-2 rounded-full font-medium transition-all transform hover:scale-105">
+                            <i class="fas fa-thumbs-up mr-1"></i>Vote
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-spotify/50 transition-all" data-mock="true">
+                    <div class="flex items-center space-x-4">
+                        <!-- A modern album cover with neon synthwave aesthetics and gradient backgrounds -->
+                        <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60" 
+                             alt="Album cover" class="w-15 h-15 rounded-lg object-cover">
+                        <div class="flex-1">
+                            <p class="font-medium" data-bind="song.title">Levitating</p>
+                            <p class="text-gray-light text-sm" data-bind="song.artist">Dua Lipa</p>
+                            <div class="flex items-center space-x-2 mt-2">
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-thumbs-up text-spotify text-sm"></i>
+                                    <span class="text-sm font-medium animate-bounce-subtle" data-bind="song.votes">15</span>
+                                </div>
+                                <div class="w-20 bg-gray-700 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-spotify to-accent h-2 rounded-full transition-all duration-500" style="width: 60%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button data-event="click:voteForSong" 
+                                class="bg-spotify hover:bg-green-600 px-4 py-2 rounded-full font-medium transition-all transform hover:scale-105">
+                            <i class="fas fa-thumbs-up mr-1"></i>Vote
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-spotify/50 transition-all" data-mock="true">
+                    <div class="flex items-center space-x-4">
+                        <!-- A stylized album cover with abstract art and bold typography -->
+                        <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60" 
+                             alt="Album cover" class="w-15 h-15 rounded-lg object-cover">
+                        <div class="flex-1">
+                            <p class="font-medium" data-bind="song.title">Stay</p>
+                            <p class="text-gray-light text-sm" data-bind="song.artist">The Kid LAROI & Justin Bieber</p>
+                            <div class="flex items-center space-x-2 mt-2">
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-thumbs-up text-spotify text-sm"></i>
+                                    <span class="text-sm font-medium" data-bind="song.votes">12</span>
+                                </div>
+                                <div class="w-20 bg-gray-700 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-spotify to-accent h-2 rounded-full transition-all duration-500" style="width: 48%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button data-event="click:voteForSong" 
+                                class="bg-gray-700 border-2 border-gray-600 px-4 py-2 rounded-full font-medium text-gray-light cursor-not-allowed">
+                            <i class="fas fa-check mr-1"></i>Voted
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-spotify/50 transition-all" data-mock="true">
+                    <div class="flex items-center space-x-4">
+                        <!-- A retro-style album cover with vintage aesthetic and warm tones -->
+                        <img src="https://pixabay.com/get/ga767f9a726ff4fb0d5dfc7101c4ff61414452f1009dc8c525757cf4ddac124a1f640c9472b6fde25fd716d3d5c57bc6e2fe5fcec67f7f08e5ecec280c3552a89_1280.jpg" 
+                             alt="Album cover" class="w-15 h-15 rounded-lg object-cover">
+                        <div class="flex-1">
+                            <p class="font-medium" data-bind="song.title">Heat Waves</p>
+                            <p class="text-gray-light text-sm" data-bind="song.artist">Glass Animals</p>
+                            <div class="flex items-center space-x-2 mt-2">
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-thumbs-up text-spotify text-sm"></i>
+                                    <span class="text-sm font-medium" data-bind="song.votes">8</span>
+                                </div>
+                                <div class="w-20 bg-gray-700 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-spotify to-accent h-2 rounded-full transition-all duration-500" style="width: 32%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button data-event="click:voteForSong" 
+                                class="bg-spotify hover:bg-green-600 px-4 py-2 rounded-full font-medium transition-all transform hover:scale-105">
+                            <i class="fas fa-thumbs-up mr-1"></i>Vote
+                        </button>
+                    </div>
+                </div>
+                <!-- @END_MAP )) -->
+            </div>
+
+            <!-- Request Song -->
+            <div class="bg-dark/50 border border-gray-800 rounded-xl p-4">
+                <h4 class="font-semibold mb-3">Request a Song</h4>
+                <div class="flex space-x-2">
+                    <input type="text" placeholder="Search for a song..." 
+                           class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:border-spotify focus:outline-none">
+                    <button class="bg-spotify hover:bg-green-600 px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-light mt-2">Requests require admin approval</p>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: VotingInterface -->
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2">
+        <!-- Toast notifications would appear here -->
+    </div>
+
+    <!-- @END_COMPONENT: AppLayout -->
+
+    <script>
+        (function() {
+            // Tab switching functionality
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            function switchTab(targetTab) {
+                // Update button states
+                tabButtons.forEach(btn => {
+                    if (btn.dataset.tab === targetTab) {
+                        btn.classList.remove('bg-gray-700', 'text-gray-light');
+                        btn.classList.add('bg-spotify', 'text-white');
+                    } else {
+                        btn.classList.remove('bg-spotify', 'text-white');
+                        btn.classList.add('bg-gray-700', 'text-gray-light');
+                    }
+                });
+
+                // Update content visibility
+                tabContents.forEach(content => {
+                    if (content.id === `${targetTab}-view`) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    switchTab(button.dataset.tab);
+                });
+            });
+
+            // Real-time updates simulation
+            function simulateRealTimeUpdates() {
+                const voteElements = document.querySelectorAll('[data-bind*="votes"]');
+                
+                setInterval(() => {
+                    voteElements.forEach(element => {
+                        const currentVotes = parseInt(element.textContent);
+                        if (Math.random() > 0.7) { // 30% chance of vote change
+                            const newVotes = currentVotes + (Math.random() > 0.5 ? 1 : -1);
+                            if (newVotes >= 0) {
+                                element.textContent = newVotes;
+                                element.classList.add('animate-bounce-subtle');
+                                setTimeout(() => {
+                                    element.classList.remove('animate-bounce-subtle');
+                                }, 1000);
+                            }
+                        }
+                    });
+                }, 3000);
+            }
+
+            // Toast notification system
+            function showToast(message, type = 'success') {
+                const toastContainer = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                
+                const bgColor = type === 'success' ? 'bg-spotify' : 'bg-red-600';
+                toast.className = `${bgColor} text-white px-4 py-2 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300`;
+                toast.textContent = message;
+                
+                toastContainer.appendChild(toast);
+                
+                // Animate in
+                setTimeout(() => {
+                    toast.classList.remove('translate-x-full');
+                }, 100);
+                
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    toast.classList.add('translate-x-full');
+                    setTimeout(() => {
+                        toastContainer.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+
+            // Vote button handling
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('button[data-event*="voteForSong"]')) {
+                    const button = e.target.closest('button');
+                    if (!button.classList.contains('cursor-not-allowed')) {
+                        // TODO: Implement actual voting logic
+                        showToast('Vote submitted!');
+                        
+                        // Update button state
+                        button.classList.remove('bg-spotify', 'hover:bg-green-600');
+                        button.classList.add('bg-gray-700', 'border-2', 'border-gray-600', 'text-gray-light', 'cursor-not-allowed');
+                        button.innerHTML = '<i class="fas fa-check mr-1"></i>Voted';
+                        
+                        // Update votes remaining
+                        const votesRemainingEl = document.querySelector('[data-bind="user.votesRemaining"]');
+                        const current = votesRemainingEl.textContent.split(' / ');
+                        const remaining = parseInt(current[0]) - 1;
+                        votesRemainingEl.textContent = `${remaining} / ${current[1]}`;
+                    }
+                }
+            });
+
+            // Initialize real-time updates
+            simulateRealTimeUpdates();
+            
+            // Show initial toast
+            setTimeout(() => {
+                showToast('Welcome to SyncJuke! 🎵');
+            }, 1000);
+
+        })();
+    </script>
+</body>
+</html>
